@@ -1,0 +1,29 @@
+server {
+  listen   80;
+  server_name  <%= node['hostname'] %>;
+  
+  root /vagrant_data/<%= node['hostname'] %>;
+
+  access_log  <%= node['nginx']['log_dir'] %>/<%= node['hostname'] %>.access.log;
+  error_log   <%= node['nginx']['log_dir'] %>/<%= node['hostname'] %>.access.log;
+
+  location / {
+    index app.php;
+    try_files $uri @rewriteapp;
+  }
+  
+  location @rewriteapp {
+    rewrite ^(.*)$ /app.php/$1 last;
+  }
+  
+  location ~ ^/(app|app_dev|app_test|config)\.php(/|$) {
+    fastcgi_pass   unix:/var/run/php-fpm/php-fpm.sock;
+    fastcgi_split_path_info ^(.+\.php)(/.*)$;
+    include fastcgi_params;
+
+    fastcgi_param  ENV                dev;
+    fastcgi_param  SCRIPT_FILENAME    $document_root$fastcgi_script_name;
+    fastcgi_param  HTTPS              off;
+  }
+  
+}
